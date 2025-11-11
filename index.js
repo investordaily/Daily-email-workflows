@@ -142,6 +142,11 @@ function buildEmailHtml(dateISO, picks, articles) {
   const logo = 'https://drive.google.com/uc?export=view&id=1YZ-Po3PWd2T3HW-Xl71DderctGs3LVYm';
   const brandColor = '#355E3B';
 
+  // Company names with links
+  const companyLinksHtml = picks.slice(0, 5).map((p, idx) => {
+    return `<div style="margin-bottom: 8px;"><a href="${p.link || '#'}" style="color: ${brandColor}; text-decoration: none; font-weight: 600;">${idx+1}. ${p.name}${p.ticker ? ' (' + p.ticker + ')' : ''}</a></div>`;
+  }).join('');
+
   const picksHtml = picks.map((p, idx) => {
     return `<div style="margin-bottom: 16px; padding: 14px; border-left: 4px solid ${brandColor}; background: #f9faf8; border-radius: 8px;">
       <h3 style="margin: 0 0 6px 0; font-size: 16px; color: #2b4b3a;">${idx+1}. ${p.name} ${p.ticker ? '('+p.ticker+')' : ''}</h3>
@@ -186,7 +191,7 @@ function buildEmailHtml(dateISO, picks, articles) {
       margin-bottom: 16px;
     }
     .logo {
-      width: 52px;
+      width: 130px;
       height: auto;
       display: block;
       margin-bottom: 12px;
@@ -243,7 +248,7 @@ function buildEmailHtml(dateISO, picks, articles) {
         font-size: 18px;
       }
       .logo {
-        width: 40px;
+        width: 100px;
       }
       .btn {
         display: block;
@@ -263,20 +268,20 @@ function buildEmailHtml(dateISO, picks, articles) {
       </div>
       <div class="section">
         <p class="lead">Top 5 AI investment picks for today (including small-cap opportunities) + 10 free, high-quality articles.</p>
-        <a href="#top-picks" class="btn">See Today's Top Picks</a>
-        <a href="#articles" style="color: ${brandColor}; text-decoration: none;">Read 10 articles →</a>
       </div>
       <div id="top-picks" class="section">
         <h2 style="font-size: 18px; margin: 0 0 10px 0; color: #233728;">5 Top AI Investment Picks</h2>
+        <div style="margin-bottom: 16px; padding: 12px; background: #f5f5f5; border-radius: 6px;">
+          ${companyLinksHtml}
+        </div>
         ${picksHtml}
-        <p style="margin-top: 12px; font-size: 13px; color: #666;"><strong>Disclaimer:</strong> Informational only — not investment advice.</p>
+        <p style="margin-top: 8px; font-size: 13px; color: #666;"><strong>Disclaimer:</strong> Informational only — not investment advice.</p>
       </div>
       <div id="articles" class="section">
         <h2 style="font-size: 18px; margin: 0 0 10px 0; color: #233728;">10 Free Articles — AI Companies to Watch</h2>
         <ol class="articles-list">
           ${articlesHtml}
         </ol>
-        <a href="#" class="btn">Read all articles on web</a>
       </div>
       <div class="footer">
         <p>You received this email because you subscribed to AI Investor Daily — curated AI investing insights.</p>
