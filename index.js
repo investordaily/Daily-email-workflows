@@ -1,17 +1,3 @@
-/**
- * AI Investor Daily — auto-updater (NER-enhanced)
- * - Extracts first 100 words from each free article
- * - Finds company names with compromise (light NER) and maps to tickers via Yahoo
- * - Ensures at least 3 small-cap picks
- * - Writes HTML to ./output/daily-email-YYYY-MM-DD.html
- *
- * Usage:
- * 1. npm install
- * 2. node index.js
- *
- * Notes: Respect rate limits and site terms. This is best-effort tooling.
- */
-
 const fs = require('fs');
 const path = require('path');
 const RSSParser = require('rss-parser');
@@ -36,7 +22,7 @@ const KEYWORDS = ['AI', 'artificial intelligence', 'machine learning', 'LLM', 'l
 const MAX_ARTICLES = 10;
 const OUTPUT_DIR = path.join(__dirname, 'output');
 
-const SMALL_CAP_RANGE = { min: 300_000_000, max: 2_000_000_000 }; // USD
+const SMALL_CAP_RANGE = { min: 300_000_000, max: 2_000_000_000 };
 const DESIRED_SMALL_CAP_COUNT = 3;
 
 function matchesKeywords(text) {
@@ -79,7 +65,7 @@ async function isLikelyPaywalled(url) {
     return false;
   } catch (err) {
     console.warn(`Fetch failed for isLikelyPaywalled: ${err.message}`);
-    return true; // treat unreachable as paywalled to be safe
+    return true;
   }
 }
 
@@ -87,7 +73,6 @@ async function fetchArticleText(url) {
   try {
     const r = await axios.get(url, { timeout: 12000, headers: { 'User-Agent': 'Mozilla/5.0' } });
     const $ = cheerio.load(r.data);
-    // heuristics: prefer article > p, otherwise all <p>
     let paragraphs = $('article p').map((i, el) => $(el).text()).get();
     if (paragraphs.length === 0) paragraphs = $('p').map((i, el) => $(el).text()).get();
     const text = paragraphs.join('\n\n').replace(/\s+/g, ' ').trim();
@@ -104,7 +89,6 @@ function firstNWords(text, n) {
   return words.slice(0, n).join(' ');
 }
 
-// simple Yahoo Finance search
 async function yahooSearch(query) {
   try {
     const url = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(query)}&quotesCount=6&newsCount=0`;
@@ -137,12 +121,15 @@ function formatMoney(num) {
   return num.toString();
 }
 
+function shuffleArray(arr) {
+  return arr.sort(() => Math.random() - 0.5);
+}
+
 function buildEmailHtml(dateISO, picks, articles) {
   const dateStr = DateTime.fromISO(dateISO).toLocaleString(DateTime.DATE_FULL);
   const logo = 'https://drive.google.com/uc?export=view&id=1YZ-Po3PWd2T3HW-Xl71DderctGs3LVYm';
   const brandColor = '#355E3B';
 
-  // Company names with links to Yahoo Finance
   const companyLinksHtml = picks.slice(0, 5).map((p, idx) => {
     return `<div style="margin-bottom: 8px;"><a href="${p.link || '#'}" style="color: ${brandColor}; text-decoration: none; font-weight: 600;">${idx+1}. ${p.name}${p.ticker ? ' (' + p.ticker + ')' : ''}</a></div>`;
   }).join('');
@@ -215,17 +202,6 @@ function buildEmailHtml(dateISO, picks, articles) {
       color: #555;
       font-size: 14px;
     }
-    .btn {
-      display: inline-block;
-      padding: 10px 14px;
-      background-color: ${brandColor};
-      color: #fff;
-      text-decoration: none;
-      border-radius: 6px;
-      font-weight: 600;
-      font-size: 13px;
-      margin-right: 10px;
-    }
     .articles-list {
       margin: 12px 0;
       padding-left: 20px;
@@ -249,11 +225,6 @@ function buildEmailHtml(dateISO, picks, articles) {
       }
       .logo {
         width: 130px;
-      }
-      .btn {
-        display: block;
-        margin-bottom: 8px;
-        text-align: center;
       }
     }
   </style>
@@ -305,7 +276,6 @@ function escapeHtml(s) {
   const feedItems = await fetchRSSItems();
   console.log(`Fetched ${feedItems.length} feed items.`);
 
-  // Filter candidates by keyword
   const candidates = feedItems.filter(it => matchesKeywords(it.title) || matchesKeywords(it.source));
   console.log(`Keyword-filtered to ${candidates.length} items.`);
 
@@ -316,9 +286,8 @@ function escapeHtml(s) {
     await new Promise(r => setTimeout(r, 400));
     const paywalled = await isLikelyPaywalled(it.link);
     if (!paywalled) {
-      // fetch text and excerpt
       const text = await fetchArticleText(it.link);
-      const excerpt = firstNWords(text, 100); // first 100 words
+      const excerpt = firstNWords(text, 100);
       freeArticles.push({ title: it.title, link: it.link, pubDate: it.pubDate, source: it.source, text, excerpt });
       console.log('Added free article:', it.title);
     } else {
@@ -327,7 +296,6 @@ function escapeHtml(s) {
     if (freeArticles.length >= MAX_ARTICLES) break;
   }
 
-  // If not enough free articles, relax and take more (without paywall check)
   if (freeArticles.length < MAX_ARTICLES) {
     console.log(`Only ${freeArticles.length} free articles found; relaxing paywall check...`);
     for (const it of candidates) {
@@ -339,7 +307,6 @@ function escapeHtml(s) {
     }
   }
 
-  // NER: extract organization names from all article texts using compromise
   const orgCounts = {};
   for (const art of freeArticles) {
     if (!art.text) continue;
@@ -353,11 +320,9 @@ function escapeHtml(s) {
     }
   }
 
-  // Create a prioritized list of candidate company names
   const sortedOrgs = Object.entries(orgCounts).sort((a,b) => b[1]-a[1]).map(t => t[0]).slice(0, 50);
 
-  // For each org, try Yahoo search to get tickers
-  const tickerMap = {}; // symbol -> {name,marketCap}
+  const tickerMap = {};
   for (const orgName of sortedOrgs) {
     await new Promise(r => setTimeout(r, 300));
     const results = await yahooSearch(orgName);
@@ -378,31 +343,24 @@ function escapeHtml(s) {
         }
       }
     }
-    // stop early if we have a reasonable pool
     if (Object.keys(tickerMap).length >= 40) break;
   }
 
-  // Convert to array
   const tickers = Object.values(tickerMap);
   tickers.sort((a,b) => (b.marketCap||0) - (a.marketCap||0));
 
-  // Build picks: randomize anchor selection for diversity
-const picks = [];
-const allAnchorSymbols = ['NVDA','MSFT','GOOGL','AMD','INTC','QCOM','META','TSLA','AMZN','NFLX','AAPL'];
-// Shuffle and pick 2 random large-caps
-const shuffleArray = (arr) => arr.sort(() => Math.random() - 0.5);
-const anchorSymbols = shuffleArray([...allAnchorSymbols]).slice(0, 2);
+  const picks = [];
+  const allAnchorSymbols = ['NVDA','MSFT','GOOGL','AMD','INTC','QCOM','META','TSLA','AMZN','NFLX','AAPL'];
+  const anchorSymbols = shuffleArray([...allAnchorSymbols]).slice(0, 2);
 
-for (const s of anchorSymbols) {
-  const f = tickers.find(t => t.symbol === s);
-  if (f && picks.length < 5 && !picks.find(p=>p.ticker===f.symbol)) {
-    picks.push({ name: f.name, ticker: f.symbol, marketCap: f.marketCap, reason: 'Large-cap AI/tech exposure', link: `https://finance.yahoo.com/quote/${f.symbol}` });
+  for (const s of anchorSymbols) {
+    const f = tickers.find(t => t.symbol === s);
+    if (f && picks.length < 5 && !picks.find(p=>p.ticker===f.symbol)) {
+      picks.push({ name: f.name, ticker: f.symbol, marketCap: f.marketCap, reason: 'Large-cap AI/tech exposure', link: `https://finance.yahoo.com/quote/${f.symbol}` });
+    }
   }
-}
 
-  // Ensure at least DESIRED_SMALL_CAP_COUNT small-caps
-  const smalls = tickers.filter(t => t.marketCap && t.marketCap >= SMALL_CAP_RANGE.min && t.marketCap <= SMALL_CAP_RANGE.max)
-                        .slice(0, DESIRED_SMALL_CAP_COUNT);
+  const smalls = tickers.filter(t => t.marketCap && t.marketCap >= SMALL_CAP_RANGE.min && t.marketCap <= SMALL_CAP_RANGE.max).slice(0, DESIRED_SMALL_CAP_COUNT);
   for (const s of smalls) {
     if (!picks.find(p => p.ticker === s.symbol)) {
       picks.push({ name: s.name, ticker: s.symbol, marketCap: s.marketCap, reason: 'Small-cap AI opportunity (news mentions & NER)', link: `https://finance.yahoo.com/quote/${s.symbol}` });
@@ -410,7 +368,6 @@ for (const s of anchorSymbols) {
     if (picks.length >= 5) break;
   }
 
-  // Fill remaining picks by top market cap tickers
   if (picks.length < 5) {
     for (const t of tickers) {
       if (picks.length >= 5) break;
@@ -420,15 +377,22 @@ for (const s of anchorSymbols) {
     }
   }
 
-  // Fallback if still short - randomize for diversity
-const allFallback = ['NVDA','MSFT','GOOGL','AMD','BOTZ','QQQ','ARKF','ROBO','XLK','IVW'];
-const fallback = shuffleArray([...allFallback]).slice(0, 5);
+  if (picks.length < 5) {
+    const allFallback = ['NVDA','MSFT','GOOGL','AMD','BOTZ','QQQ','ARKF','ROBO','XLK','IVW'];
+    const fallback = shuffleArray([...allFallback]).slice(0, 5);
+    for (const sym of fallback) {
+      if (picks.length >= 5) break;
+      if (!picks.find(p=>p.ticker===sym)) {
+        picks.push({ name: sym, ticker: sym, marketCap: null, reason: 'Popular AI/Tech ETF', link: `https://finance.yahoo.com/quote/${sym}` });
+      }
+    }
+  }
 
-  // Build HTML and write
   const today = DateTime.now().toISODate();
   const html = buildEmailHtml(today, picks, freeArticles.slice(0, MAX_ARTICLES).map(a => ({ title: a.title, link: a.link, source: a.source, excerpt: a.excerpt })));
   const outFile = path.join(OUTPUT_DIR, `daily-email-${today}.html`);
   fs.writeFileSync(outFile, html, 'utf8');
   console.log(`Wrote ${outFile}`);
+  console.log(`Built ${picks.length} picks for email`);
   process.exit(0);
 })();
