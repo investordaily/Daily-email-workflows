@@ -131,7 +131,7 @@ function buildEmailHtml(dateISO, picks, articles) {
   const brandColor = '#355E3B';
 
   const companyLinksHtml = picks.slice(0, 5).map((p, idx) => {
-    return `<div style="margin-bottom: 8px;"><a href="${p.link || '#'}" style="color: ${brandColor}; text-decoration: none; font-weight: 600;">${idx+1}. ${p.longName}${p.ticker ? ' (' + p.ticker + ')' : ''}</a></div>`;
+    return `<div style="margin-bottom: 8px;"><a href="${p.link || '#'}" style="color: ${brandColor}; text-decoration: none; font-weight: 600;">${idx+1}. ${p.name}${p.ticker ? ' (' + p.ticker + ')' : ''}</a></div>`;
   }).join('');
 
   const articlesHtml = articles.map(a => {
