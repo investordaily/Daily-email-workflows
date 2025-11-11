@@ -181,7 +181,7 @@ function buildEmailHtml(dateISO, picks, articles) {
       margin-bottom: 16px;
     }
     .logo {
-      width: 290px;
+      width: 350px;
       height: auto;
       display: block;
       margin-bottom: 12px;
