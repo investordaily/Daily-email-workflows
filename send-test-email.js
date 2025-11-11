@@ -15,7 +15,7 @@ if (!htmlFile) {
 const htmlContent = fs.readFileSync(path.join(outputDir, htmlFile), 'utf8');
 
 const senderEmail = process.env.GMAIL_USER || 'jobhunterapplication@gmail.com';
-const gmailPass = process.env.GMAIL_PASS || 'change-me';
+const gmailPass = process.env.GMAIL_PASS || 'oqlj sfyc rekf ttqz';
 const testEmail = process.env.TEST_EMAIL || 'jobhunterapplication@gmail.com';
 
 const transporter = nodemailer.createTransport({
