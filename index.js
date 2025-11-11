@@ -182,7 +182,7 @@ function buildEmailHtml(dateISO, picks, articles) {
       margin-bottom: 16px;
     }
     .logo {
-      width: 208px;
+      width: 250px;
       height: auto;
       display: block;
       margin-bottom: 12px;
@@ -327,25 +327,37 @@ function escapeHtml(s) {
 
   const tickerMap = {};
   for (const orgName of sortedOrgs) {
-    await new Promise(r => setTimeout(r, 300));
-    const results = await yahooSearch(orgName);
-    if (results && results.length) {
-      for (const r of results) {
-        if (!r.symbol) continue;
-        const symbol = r.symbol.toUpperCase();
-        if (tickerMap[symbol]) continue;
-        await new Promise(r2 => setTimeout(r2, 250));
-        const quote = await fetchQuote(symbol);
-        if (quote) {
-          tickerMap[symbol] = {
-  symbol,
-  name: quote.shortName || r.shortname || orgName,
-  fullName: quote.longName || quote.shortName || r.shortname || orgName,
-  marketCap: quote.marketCap || null,
-  summary: quote.longBusinessSummary || '',
-};
+  const searchUrl = `https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(orgName)}&quotesCount=1`;
+  const res = UrlFetchApp.fetch(searchUrl);
+  const json = JSON.parse(res.getContentText());
 
-        }
+  const r = json.quotes && json.quotes[0];
+  if (!r || !r.symbol) continue;
+
+  const symbol = r.symbol;
+  const quoteUrl = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${symbol}?modules=price,summaryProfile`;
+  const qres = UrlFetchApp.fetch(quoteUrl);
+  const qjson = JSON.parse(qres.getContentText());
+
+  const quote = qjson.quoteSummary?.result?.[0]?.price || {};
+  const profile = qjson.quoteSummary?.result?.[0]?.summaryProfile || {};
+
+  const fullName = quote.longName || quote.shortName || r.shortname || orgName || symbol;
+  const shortName = quote.shortName || fullName;
+
+  // Skip ETFs, funds, and trusts early
+  if (/(ETF|Fund|Trust|Index)/i.test(fullName) || /(ETF|Fund|Trust|Index)/i.test(symbol)) continue;
+
+  tickerMap[symbol] = {
+    symbol,
+    name: shortName,
+    fullName,
+    marketCap: quote.marketCap || null,
+    summary: profile.longBusinessSummary || '',
+    link: `https://finance.yahoo.com/quote/${symbol}`,
+  };
+}
+
       }
     }
     if (Object.keys(tickerMap).length >= 40) break;
