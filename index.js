@@ -134,14 +134,6 @@ function buildEmailHtml(dateISO, picks, articles) {
     return `<div style="margin-bottom: 8px;"><a href="${p.link || '#'}" style="color: ${brandColor}; text-decoration: none; font-weight: 600;">${idx+1}. ${p.name}${p.ticker ? ' (' + p.ticker + ')' : ''}</a></div>`;
   }).join('');
 
-  const picksHtml = picks.slice(0, 5).map((p, idx) => {
-    return `<div style="margin-bottom: 16px; padding: 14px; border-left: 4px solid ${brandColor}; background: #f9faf8; border-radius: 8px;">
-      <h3 style="margin: 0 0 6px 0; font-size: 16px; color: #2b4b3a;">${idx+1}. ${p.name} ${p.ticker ? '('+p.ticker+')' : ''}</h3>
-      <p style="margin: 0 0 8px 0; color: #444; font-size: 14px;">${escapeHtml(p.reason || p.summary || '')}${p.marketCap ? `<br><strong>Market cap:</strong> ${formatMoney(p.marketCap)}` : ''}</p>
-      <a href="${p.link || '#'}" style="display: inline-block; padding: 8px 12px; background: #111; color: #fff; text-decoration: none; border-radius: 6px; font-size: 13px; font-weight: 600;">View Chart & News</a>
-    </div>`;
-  }).join('\n');
-
   const articlesHtml = articles.map(a => {
     const excerpt = escapeHtml(a.excerpt || '').replace(/\n/g,' ');
     return `<li style="margin-bottom: 12px; line-height: 1.6;"><a href="${a.link}" style="color: ${brandColor}; text-decoration: none; font-weight: 600;">${escapeHtml(a.title)}</a> — <em style="color: #666;">${escapeHtml(a.source)}</em><div style="margin-top: 6px; color: #555; font-size: 13px;">${excerpt}</div></li>`;
@@ -235,21 +227,20 @@ function buildEmailHtml(dateISO, picks, articles) {
       <div class="header">
         <img src="${logo}" alt="AI Investor Daily logo" class="logo" />
         <h1>AI Investor Daily</h1>
-        <div class="header-subtitle">${dateStr} • Quick, curated AI investing picks & news</div>
+        <div class="header-subtitle">${dateStr} • Curated AI investing picks & news</div>
       </div>
       <div class="section">
-        <p class="lead">Top 5 AI investment picks for today (including small-cap opportunities) + 10 free, high-quality articles.</p>
+        <p class="lead">Top 5 AI investment picks for today (including small-cap opportunities) + Today's top 10 AI news articles.</p>
       </div>
       <div id="top-picks" class="section">
         <h2 style="font-size: 18px; margin: 0 0 10px 0; color: #233728;">5 Top AI Investment Picks</h2>
         <div style="margin-bottom: 16px; padding: 12px; background: #f5f5f5; border-radius: 6px;">
           ${companyLinksHtml}
         </div>
-        ${picksHtml}
-        <p style="margin-top: 8px; font-size: 13px; color: #666;"><strong>Disclaimer:</strong> Informational only — not investment advice.</p>
+        <strong>Disclaimer:</strong> Informational only — not investment advice.</p>
       </div>
       <div id="articles" class="section">
-        <h2 style="font-size: 18px; margin: 0 0 10px 0; color: #233728;">10 Free Articles — AI Companies to Watch</h2>
+        <h2 style="font-size: 18px; margin: 0 0 10px 0; color: #233728;">Today's Top AI Business News</h2>
         <ol class="articles-list">
           ${articlesHtml}
         </ol>
