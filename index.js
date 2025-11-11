@@ -142,22 +142,52 @@ function buildEmailHtml(dateISO, picks, articles) {
   const logo = 'https://drive.google.com/uc?export=view&id=1YZ-Po3PWd2T3HW-Xl71DderctGs3LVYm';
   const brandColor = '#355E3B';
 
-  // Company names with links to Yahoo Finance
-  const companyLinksHtml = picks.slice(0, 5).map((p, idx) => {
-    return `<div style="margin-bottom: 8px;"><a href="${p.link || '#'}" style="color: ${brandColor}; text-decoration: none; font-weight: 600;">${idx+1}. ${p.name}${p.ticker ? ' (' + p.ticker + ')' : ''}</a></div>`;
+  // Safety: ensure we have at least 5 pick objects to render (fill with placeholders if necessary)
+  const displayPicks = (picks || []).slice(0,5);
+  while (displayPicks.length < 5) {
+    const idx = displayPicks.length + 1;
+    displayPicks.push({
+      name: `TBD ${idx}`,
+      ticker: '',
+      marketCap: null,
+      reason: 'Not enough data',
+      link: '#'
+    });
+  }
+
+  // Company names with links to Yahoo Finance (compact list at top)
+  const companyLinksHtml = displayPicks.map((p, idx) => {
+    const displayName = escapeHtml(p.name || p.ticker || `Pick ${idx+1}`);
+    const displayTicker = p.ticker ? ` (${escapeHtml(p.ticker)})` : '';
+    const href = p.link || (p.ticker ? `https://finance.yahoo.com/quote/${encodeURIComponent(p.ticker)}` : '#');
+    return `<div style="margin-bottom:8px;"><a href="${href}" style="color:${brandColor}; text-decoration:none; font-weight:600;" target="_blank" rel="noopener noreferrer">${idx+1}. ${displayName}${displayTicker}</a></div>`;
   }).join('');
 
-  const picksHtml = picks.slice(0, 5).map((p, idx) => {
-    return `<div style="margin-bottom: 16px; padding: 14px; border-left: 4px solid ${brandColor}; background: #f9faf8; border-radius: 8px;">
-      <h3 style="margin: 0 0 6px 0; font-size: 16px; color: #2b4b3a;">${idx+1}. ${p.name} ${p.ticker ? '('+p.ticker+')' : ''}</h3>
-      <p style="margin: 0 0 8px 0; color: #444; font-size: 14px;">${escapeHtml(p.reason || p.summary || '')}${p.marketCap ? `<br><strong>Market cap:</strong> ${formatMoney(p.marketCap)}` : ''}</p>
-      <a href="${p.link || '#'}" style="display: inline-block; padding: 8px 12px; background: #111; color: #fff; text-decoration: none; border-radius: 6px; font-size: 13px; font-weight: 600;">View Chart & News</a>
+  // Full pick blocks
+  const picksHtml = displayPicks.map((p, idx) => {
+    const title = escapeHtml(p.name || p.ticker || `Pick ${idx+1}`);
+    const tickerText = p.ticker ? ` (${escapeHtml(p.ticker)})` : '';
+    const reason = escapeHtml((p.reason || p.summary || '').trim());
+    const marketCapText = p.marketCap ? `<br><strong>Market cap:</strong> ${formatMoney(p.marketCap)}` : '';
+    const href = p.link || (p.ticker ? `https://finance.yahoo.com/quote/${encodeURIComponent(p.ticker)}` : '#');
+
+    return `<div style="margin-bottom:16px; padding:14px; border-left:4px solid ${brandColor}; background:#f9faf8; border-radius:8px;">
+      <h3 style="margin:0 0 6px 0; font-size:16px; color:#2b4b3a;"><a href="${href}" style="color:inherit; text-decoration:none;" target="_blank" rel="noopener noreferrer">${idx+1}. ${title}${tickerText}</a></h3>
+      <p style="margin:0 0 8px 0; color:#444; font-size:14px;">${reason}${marketCapText}</p>
+      <a href="${href}" style="display:inline-block; padding:8px 12px; background:#111; color:#fff; text-decoration:none; border-radius:6px; font-size:13px; font-weight:600;" target="_blank" rel="noopener noreferrer">View Chart & News</a>
     </div>`;
   }).join('\n');
 
-  const articlesHtml = articles.map(a => {
+  const articlesHtml = (articles || []).map(a => {
     const excerpt = escapeHtml(a.excerpt || '').replace(/\n/g,' ');
-    return `<li style="margin-bottom: 12px; line-height: 1.6;"><a href="${a.link}" style="color: ${brandColor}; text-decoration: none; font-weight: 600;">${escapeHtml(a.title)}</a> — <em style="color: #666;">${escapeHtml(a.source)}</em><div style="margin-top: 6px; color: #555; font-size: 13px;">${excerpt}</div></li>`;
+    const title = escapeHtml(a.title || 'Untitled');
+    const src = escapeHtml(a.source || '');
+    const link = a.link || '#';
+    return `<li style="margin-bottom:12px; line-height:1.6;">
+      <a href="${link}" style="color:${brandColor}; text-decoration:none; font-weight:600;" target="_blank" rel="noopener noreferrer">${title}</a>
+      ${src ? ` — <em style="color:#666;">${src}</em>` : ''}
+      <div style="margin-top:6px; color:#555; font-size:13px;">${excerpt}</div>
+    </li>`;
   }).join('\n');
 
   return `<!DOCTYPE html>
@@ -168,130 +198,67 @@ function buildEmailHtml(dateISO, picks, articles) {
   <meta http-equiv="X-UA-Compatible" content="ie=edge" />
   <title>AI Investor Daily</title>
   <style type="text/css">
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      background-color: #f6f7f9;
-      color: #111;
-      line-height: 1.6;
-    }
-    .wrapper {
-      width: 100%;
-      max-width: 680px;
-      margin: 0 auto;
-      background-color: #fff;
-      padding: 20px;
-      box-sizing: border-box;
-    }
-    .header {
-      display: block;
-      padding-bottom: 16px;
-      border-bottom: 1px solid #ececec;
-      margin-bottom: 16px;
-    }
-    .logo {
-      width: 173px;
-      height: auto;
-      display: block;
-      margin-bottom: 12px;
-    }
-    .header h1 {
-      margin: 0;
-      font-size: 20px;
-      color: #233728;
-    }
-    .header-subtitle {
-      color: #666;
-      font-size: 13px;
-      margin: 4px 0 0 0;
-    }
-    .section {
-      padding: 16px 0;
-      border-bottom: 1px solid #f0f0f0;
-    }
-    .lead {
-      margin: 10px 0 18px 0;
-      color: #555;
-      font-size: 14px;
-    }
-    .btn {
-      display: inline-block;
-      padding: 10px 14px;
-      background-color: ${brandColor};
-      color: #fff;
-      text-decoration: none;
-      border-radius: 6px;
-      font-weight: 600;
-      font-size: 13px;
-      margin-right: 10px;
-    }
-    .articles-list {
-      margin: 12px 0;
-      padding-left: 20px;
-    }
-    .footer {
-      font-size: 12px;
-      color: #888;
-      padding-top: 14px;
-      border-top: 1px solid #f0f0f0;
-      margin-top: 16px;
-    }
-    .footer p {
-      margin: 6px 0;
-    }
-    @media (max-width: 480px) {
-      .wrapper {
-        padding: 10px !important;
-      }
-      .header h1 {
-        font-size: 18px;
-      }
-      .logo {
-        width: 130px;
-      }
-      .btn {
-        display: block;
-        margin-bottom: 8px;
-        text-align: center;
-      }
+    body { margin:0; padding:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif; background:#f6f7f9; color:#111; line-height:1.6; }
+    .wrapper { width:100%; max-width:680px; margin:0 auto; background:#fff; padding:20px; box-sizing:border-box; }
+    .header { display:block; padding-bottom:16px; border-bottom:1px solid #ececec; margin-bottom:16px; }
+    .logo { width:173px; height:auto; display:block; margin-bottom:12px; }
+    .header h1 { margin:0; font-size:20px; color:#233728; }
+    .header-subtitle { color:#666; font-size:13px; margin:4px 0 0 0; }
+    .section { padding:16px 0; border-bottom:1px solid #f0f0f0; }
+    .lead { margin:10px 0 18px 0; color:#555; font-size:14px; }
+    .btn { display:inline-block; padding:10px 14px; background-color:${brandColor}; color:#fff; text-decoration:none; border-radius:6px; font-weight:600; font-size:13px; margin-right:10px; }
+    .articles-list { margin:12px 0; padding-left:20px; }
+    .footer { font-size:12px; color:#888; padding-top:14px; border-top:1px solid #f0f0f0; margin-top:16px; }
+    .footer p { margin:6px 0; }
+    @media (max-width:480px) {
+      .wrapper { padding:10px !important; }
+      .header h1 { font-size:18px; }
+      .logo { width:130px; }
+      .btn { display:block; margin-bottom:8px; text-align:center; }
     }
   </style>
 </head>
 <body>
-  <center style="padding: 20px;">
+  <center style="padding:20px;">
     <div class="wrapper" role="article">
       <div class="header">
         <img src="${logo}" alt="AI Investor Daily logo" class="logo" />
         <h1>AI Investor Daily</h1>
         <div class="header-subtitle">${dateStr} • Quick, curated AI investing picks & news</div>
       </div>
+
       <div class="section">
         <p class="lead">Top 5 AI investment picks for today (including small-cap opportunities) + 10 free, high-quality articles.</p>
       </div>
+
       <div id="top-picks" class="section">
-        <h2 style="font-size: 18px; margin: 0 0 10px 0; color: #233728;">5 Top AI Investment Picks</h2>
-        <div style="margin-bottom: 16px; padding: 12px; background: #f5f5f5; border-radius: 6px;">
+        <h2 style="font-size:18px; margin:0 0 10px 0; color:#233728;">5 Top AI Investment Picks</h2>
+        <div style="margin-bottom:16px; padding:12px; background:#f5f5f5; border-radius:6px;">
           ${companyLinksHtml}
         </div>
+
         ${picksHtml}
-        <p style="margin-top: 8px; font-size: 13px; color: #666;"><strong>Disclaimer:</strong> Informational only — not investment advice.</p>
+
+        <p style="margin-top:8px; font-size:13px; color:#666;"><strong>Disclaimer:</strong> Informational only — not investment advice.</p>
       </div>
+
       <div id="articles" class="section">
-        <h2 style="font-size: 18px; margin: 0 0 10px 0; color: #233728;">10 Free Articles — AI Companies to Watch</h2>
+        <h2 style="font-size:18px; margin:0 0 10px 0; color:#233728;">10 Free Articles — AI Companies to Watch</h2>
         <ol class="articles-list">
           ${articlesHtml}
         </ol>
       </div>
+
       <div class="footer">
-        <p>You received this email because you subscribed to <a href="https://aiinvestordaily.com" style="color: ${brandColor}; text-decoration: none; font-weight: 600;">AI Investor Daily</a> — curated AI investing insights.</p>
-        <p><a href="https://docs.google.com/forms/d/e/1FAIpQLSf3QdhPKrODDE1Fxghw8I9jH8lzjh1zGqYvuXDF7GNv2i4o5w/viewform?usp=pp_url&entry.638716b0={EMAIL}" style="color: ${brandColor}; text-decoration: none;">Unsubscribe</a></p>
+        <p>You received this email because you subscribed to <a href="https://aiinvestordaily.com" style="color:${brandColor}; text-decoration:none; font-weight:600;">AI Investor Daily</a> — curated AI investing insights.</p>
+        <p><a href="https://docs.google.com/forms/d/e/1FAIpQLSf3QdhPKrODDE1Fxghw8I9jH8lzjh1zGqYvuXDF7GNv2i4o5w/viewform?usp=pp_url&entry.638716b0={EMAIL}" style="color:${brandColor}; text-decoration:none;">Unsubscribe</a></p>
       </div>
     </div>
   </center>
 </body>
 </html>`;
 }
+
 
 function escapeHtml(s) {
   if (!s) return '';
@@ -423,7 +390,26 @@ for (const s of anchorSymbols) {
   // Fallback if still short - randomize for diversity
 const allFallback = ['NVDA','MSFT','GOOGL','AMD','BOTZ','QQQ','ARKF','ROBO','XLK','IVW'];
 const fallback = shuffleArray([...allFallback]).slice(0, 5);
-
+// --- NORMALIZE PICKS: ensure each pick has name, ticker, and link ---
+for (let i = 0; i < picks.length; i++) {
+  const p = picks[i];
+  // Ensure ticker/name are strings
+  p.ticker = (p.ticker || '').toString().toUpperCase();
+  p.name = p.name || p.ticker || `Pick ${i+1}`;
+  // Ensure marketCap exists (can be null)
+  if (typeof p.marketCap === 'undefined') p.marketCap = null;
+  // Ensure link exists; fallback to Yahoo Finance by ticker or search by name
+  if (!p.link || p.link === '#') {
+    if (p.ticker) {
+      p.link = `https://finance.yahoo.com/quote/${encodeURIComponent(p.ticker)}`;
+    } else {
+      // fallback: Yahoo search page for the company name
+      p.link = `https://finance.yahoo.com/lookup?s=${encodeURIComponent(p.name)}`;
+    }
+  }
+  // Keep reason short
+  p.reason = p.reason || '';
+}
   // Build HTML and write
   const today = DateTime.now().toISODate();
   const html = buildEmailHtml(today, picks, freeArticles.slice(0, MAX_ARTICLES).map(a => ({ title: a.title, link: a.link, source: a.source, excerpt: a.excerpt })));
