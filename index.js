@@ -142,16 +142,16 @@ function buildEmailHtml(dateISO, picks, articles) {
   const logo = 'https://drive.google.com/uc?export=view&id=1YZ-Po3PWd2T3HW-Xl71DderctGs3LVYm';
   const brandColor = '#355E3B';
 
-  // Company names with links
+  // Company names with links to Yahoo Finance
   const companyLinksHtml = picks.slice(0, 5).map((p, idx) => {
     return `<div style="margin-bottom: 8px;"><a href="${p.link || '#'}" style="color: ${brandColor}; text-decoration: none; font-weight: 600;">${idx+1}. ${p.name}${p.ticker ? ' (' + p.ticker + ')' : ''}</a></div>`;
   }).join('');
 
-  const picksHtml = picks.map((p, idx) => {
+  const picksHtml = picks.slice(0, 5).map((p, idx) => {
     return `<div style="margin-bottom: 16px; padding: 14px; border-left: 4px solid ${brandColor}; background: #f9faf8; border-radius: 8px;">
       <h3 style="margin: 0 0 6px 0; font-size: 16px; color: #2b4b3a;">${idx+1}. ${p.name} ${p.ticker ? '('+p.ticker+')' : ''}</h3>
       <p style="margin: 0 0 8px 0; color: #444; font-size: 14px;">${escapeHtml(p.reason || p.summary || '')}${p.marketCap ? `<br><strong>Market cap:</strong> ${formatMoney(p.marketCap)}` : ''}</p>
-      <a href="${p.link || '#'}" style="display: inline-block; padding: 8px 12px; background: #111; color: #fff; text-decoration: none; border-radius: 6px; font-size: 13px; font-weight: 600;">View snapshot</a>
+      <a href="${p.link || '#'}" style="display: inline-block; padding: 8px 12px; background: #111; color: #fff; text-decoration: none; border-radius: 6px; font-size: 13px; font-weight: 600;">View Chart & News</a>
     </div>`;
   }).join('\n');
 
@@ -191,7 +191,7 @@ function buildEmailHtml(dateISO, picks, articles) {
       margin-bottom: 16px;
     }
     .logo {
-      width: 130px;
+      width: 173px;
       height: auto;
       display: block;
       margin-bottom: 12px;
@@ -248,7 +248,7 @@ function buildEmailHtml(dateISO, picks, articles) {
         font-size: 18px;
       }
       .logo {
-        width: 100px;
+        width: 130px;
       }
       .btn {
         display: block;
@@ -284,8 +284,7 @@ function buildEmailHtml(dateISO, picks, articles) {
         </ol>
       </div>
       <div class="footer">
-        <p>You received this email because you subscribed to AI Investor Daily — curated AI investing insights.</p>
-        <p>AI Investor Daily • 123 Market St • City, State</p>
+        <p>You received this email because you subscribed to <a href="https://aiinvestordaily.com" style="color: ${brandColor}; text-decoration: none; font-weight: 600;">AI Investor Daily</a> — curated AI investing insights.</p>
         <p><a href="https://docs.google.com/forms/d/e/1FAIpQLSf3QdhPKrODDE1Fxghw8I9jH8lzjh1zGqYvuXDF7GNv2i4o5w/viewform?usp=pp_url&entry.638716b0={EMAIL}" style="color: ${brandColor}; text-decoration: none;">Unsubscribe</a></p>
       </div>
     </div>
