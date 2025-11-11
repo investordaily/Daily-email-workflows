@@ -22,19 +22,17 @@ const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: senderEmail,
-    pass: gmailPass,  // Use Gmail App Password (not your regular password)
+    pass: gmailPass,
   },
 });
 
 const mailOptions = {
   from: senderEmail,
   to: testEmail,
-  subject: '⚡ TEST ⚡ AI Investor Daily Newsletter',
+  subject: '⚡ AI Investor Daily Newsletter',
   html: htmlContent,
-  headers: {
-    'Content-Type': 'text/html; charset=UTF-8',
-    'MIME-Version': '1.0',
-  },
+  text: 'Please view this email in HTML format.',
+  mimeMultipart: 'mixed',
 };
 
 transporter.sendMail(mailOptions, (err, info) => {
@@ -44,7 +42,6 @@ transporter.sendMail(mailOptions, (err, info) => {
   } else {
     console.log('✅ Email sent successfully!');
     console.log('📧 Test email sent to:', testEmail);
-    console.log('Response:', info.response);
     process.exit(0);
   }
 });
