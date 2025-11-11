@@ -387,18 +387,19 @@ function escapeHtml(s) {
   tickers.sort((a,b) => (b.marketCap||0) - (a.marketCap||0));
 
   // Build picks: randomize anchor selection for diversity
-const picks = [];
-const allAnchorSymbols = ['NVDA','MSFT','GOOGL','AMD','INTC','QCOM','META','TSLA','AMZN','NFLX','AAPL'];
-// Shuffle and pick 2 random large-caps
-const shuffleArray = (arr) => arr.sort(() => Math.random() - 0.5);
-const anchorSymbols = shuffleArray([...allAnchorSymbols]).slice(0, 2);
+  const picks = [];
+  const allAnchorSymbols = ['NVDA','MSFT','GOOGL','AMD','INTC','QCOM','META','TSLA','AMZN','NFLX','AAPL'];
+  
+  // Shuffle and pick 2 random large-caps
+  const shuffleArray = (arr) => arr.sort(() => Math.random() - 0.5);
+  const anchorSymbols = shuffleArray([...allAnchorSymbols]).slice(0, 2);
 
-for (const s of anchorSymbols) {
-  const f = tickers.find(t => t.symbol === s);
-  if (f && picks.length < 5 && !picks.find(p=>p.ticker===f.symbol)) {
-    picks.push({ name: f.name, ticker: f.symbol, marketCap: f.marketCap, reason: 'Large-cap AI/tech exposure', link: `https://finance.yahoo.com/quote/${f.symbol}` });
+  for (const s of anchorSymbols) {
+    const f = tickers.find(t => t.symbol === s);
+    if (f && picks.length < 5 && !picks.find(p=>p.ticker===f.symbol)) {
+      picks.push({ name: f.name, ticker: f.symbol, marketCap: f.marketCap, reason: 'Large-cap AI/tech exposure', link: `https://finance.yahoo.com/quote/${f.symbol}` });
+    }
   }
-}
 
   // Ensure at least DESIRED_SMALL_CAP_COUNT small-caps
   const smalls = tickers.filter(t => t.marketCap && t.marketCap >= SMALL_CAP_RANGE.min && t.marketCap <= SMALL_CAP_RANGE.max)
@@ -420,10 +421,26 @@ for (const s of anchorSymbols) {
     }
   }
 
-  // Fallback if still short - randomize for diversity
-const allFallback = ['NVDA','MSFT','GOOGL','AMD','BOTZ','QQQ','ARKF','ROBO','XLK','IVW'];
-const fallback = shuffleArray([...allFallback]).slice(0, 5);
+  // FIXED: Add fallback if still short
+  if (picks.length < 5) {
+    const allFallback = ['NVDA','MSFT','GOOGL','AMD','BOTZ','QQQ','ARKF','ROBO','XLK','IVW'];
+    const fallback = shuffleArray([...allFallback]).slice(0, 5);
+    for (const s of fallback) {
+      if (picks.length >= 5) break;
+      if (!picks.find(p=>p.ticker===s)) {
+        picks.push({ name: s, ticker: s, marketCap: null, reason: 'Popular AI/Tech ETF', link: `https://finance.yahoo.com/quote/${s}` });
+      }
+    }
+  }
 
+  // Build HTML and write
+  const today = DateTime.now().toISODate();
+  const html = buildEmailHtml(today, picks, freeArticles.slice(0, MAX_ARTICLES).map(a => ({ title: a.title, link: a.link, source: a.source, excerpt: a.excerpt })));
+  const outFile = path.join(OUTPUT_DIR, `daily-email-${today}.html`);
+  fs.writeFileSync(outFile, html, 'utf8');
+  console.log(`Wrote ${outFile}`);
+  console.log(`Built ${picks.length} picks for email`);
+  process.exit(0);
   // Build HTML and write
   const today = DateTime.now().toISODate();
   const html = buildEmailHtml(today, picks, freeArticles.slice(0, MAX_ARTICLES).map(a => ({ title: a.title, link: a.link, source: a.source, excerpt: a.excerpt })));
