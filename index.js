@@ -22,7 +22,7 @@ const KEYWORDS = ['AI', 'artificial intelligence', 'machine learning', 'LLM', 'l
 const MAX_ARTICLES = 10;
 const OUTPUT_DIR = path.join(__dirname, 'output');
 
-const SMALL_CAP_RANGE = { min: 300_000_000, max: 2_000_000_000 };
+const SMALL_CAP_RANGE = { min: 50_000_000, max: 2_000_000_000 };
 const DESIRED_SMALL_CAP_COUNT = 3;
 
 function matchesKeywords(text) {
@@ -131,7 +131,7 @@ function buildEmailHtml(dateISO, picks, articles) {
   const brandColor = '#355E3B';
 
   const companyLinksHtml = picks.slice(0, 5).map((p, idx) => {
-    return `<div style="margin-bottom: 8px;"><a href="${p.link || '#'}" style="color: ${brandColor}; text-decoration: none; font-weight: 600;">${idx+1}. ${p.name}${p.ticker ? ' (' + p.ticker + ')' : ''}</a></div>`;
+    return `<div style="margin-bottom: 8px;"><a href="${p.link || '#'}" style="color: ${brandColor}; text-decoration: none; font-weight: 600;">${idx+1}. ${p.longName}${p.ticker ? ' (' + p.ticker + ')' : ''}</a></div>`;
   }).join('');
 
   const articlesHtml = articles.map(a => {
@@ -230,17 +230,17 @@ function buildEmailHtml(dateISO, picks, articles) {
         <div class="header-subtitle">${dateStr} • Curated AI investing picks & news</div>
       </div>
       <div class="section">
-        <p class="lead">Top 5 AI investment picks for today (including small-cap opportunities) + Today's top 10 AI news articles.</p>
+        <p class="lead">Today's top 5 AI investment picks + Today's top AI news.</p>
       </div>
       <div id="top-picks" class="section">
-        <h2 style="font-size: 18px; margin: 0 0 10px 0; color: #233728;">5 Top AI Investment Picks</h2>
+        <h2 style="font-size: 18px; margin: 0 0 10px 0; color: #233728;">Top 5 AI Investment Picks</h2>
         <div style="margin-bottom: 16px; padding: 12px; background: #f5f5f5; border-radius: 6px;">
           ${companyLinksHtml}
         </div>
         <strong>Disclaimer:</strong> Informational only — not investment advice.</p>
       </div>
       <div id="articles" class="section">
-        <h2 style="font-size: 18px; margin: 0 0 10px 0; color: #233728;">Today's Top AI Business News</h2>
+        <h2 style="font-size: 18px; margin: 0 0 10px 0; color: #233728;">Today's Top AI News</h2>
         <ol class="articles-list">
           ${articlesHtml}
         </ol>
