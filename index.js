@@ -382,15 +382,19 @@ function escapeHtml(s) {
   const tickers = Object.values(tickerMap);
   tickers.sort((a,b) => (b.marketCap||0) - (a.marketCap||0));
 
-  // Build picks: prefer anchors if found, then ensure small-cap picks
-  const picks = [];
-  const anchorSymbols = ['NVDA','MSFT','GOOGL','AMD','INTC','QCOM'];
-  for (const s of anchorSymbols) {
-    const f = tickers.find(t => t.symbol === s);
-    if (f && picks.length < 5 && !picks.find(p=>p.ticker===f.symbol)) {
-      picks.push({ name: f.name, ticker: f.symbol, marketCap: f.marketCap, reason: 'Anchor large-cap AI/infra exposure', link: `https://finance.yahoo.com/quote/${f.symbol}` });
-    }
+  // Build picks: randomize anchor selection for diversity
+const picks = [];
+const allAnchorSymbols = ['NVDA','MSFT','GOOGL','AMD','INTC','QCOM','META','TSLA','AMZN','NFLX','AAPL'];
+// Shuffle and pick 2 random large-caps
+const shuffleArray = (arr) => arr.sort(() => Math.random() - 0.5);
+const anchorSymbols = shuffleArray([...allAnchorSymbols]).slice(0, 2);
+
+for (const s of anchorSymbols) {
+  const f = tickers.find(t => t.symbol === s);
+  if (f && picks.length < 5 && !picks.find(p=>p.ticker===f.symbol)) {
+    picks.push({ name: f.name, ticker: f.symbol, marketCap: f.marketCap, reason: 'Large-cap AI/tech exposure', link: `https://finance.yahoo.com/quote/${f.symbol}` });
   }
+}
 
   // Ensure at least DESIRED_SMALL_CAP_COUNT small-caps
   const smalls = tickers.filter(t => t.marketCap && t.marketCap >= SMALL_CAP_RANGE.min && t.marketCap <= SMALL_CAP_RANGE.max)
@@ -412,14 +416,9 @@ function escapeHtml(s) {
     }
   }
 
-  // Fallback if still short
-  const fallback = ['NVDA','MSFT','GOOGL','AMD','BOTZ'];
-  for (const s of fallback) {
-    if (picks.length >= 5) break;
-    if (!picks.find(p=>p.ticker===s)) {
-      picks.push({ name: s, ticker: s, marketCap: null, reason: 'Fallback anchor', link: `https://finance.yahoo.com/quote/${s}` });
-    }
-  }
+  // Fallback if still short - randomize for diversity
+const allFallback = ['NVDA','MSFT','GOOGL','AMD','BOTZ','QQQ','ARKF','ROBO','XLK','IVW'];
+const fallback = shuffleArray([...allFallback]).slice(0, 5);
 
   // Build HTML and write
   const today = DateTime.now().toISODate();
