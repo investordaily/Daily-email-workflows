@@ -130,9 +130,20 @@ function buildEmailHtml(dateISO, picks, articles) {
   const logo = 'https://drive.google.com/uc?export=view&id=1YZ-Po3PWd2T3HW-Xl71DderctGs3LVYm';
   const brandColor = '#355E3B';
 
-  const companyLinksHtml = picks.slice(0, 5).map((p, idx) => {
-    return `<div style="margin-bottom: 8px;"><a href="${p.link || '#'}" style="color: ${brandColor}; text-decoration: none; font-weight: 600;">${idx+1}. ${p.name}${p.ticker ? ' (' + p.ticker + ')' : ''}</a></div>`;
-  }).join('');
+  const companyLinksHtml = picks
+  .filter(p => !/(ETF|Fund|Trust|Index)/i.test(p.name)) // exclude funds/ETFs
+  .slice(0, 5)
+  .map((p, idx) => {
+    const displayName = p.fullName || p.name || p.ticker;
+    return `<div style="margin-bottom: 8px;">
+      <a href="${p.link || '#'}" 
+         style="color: ${brandColor}; text-decoration: none; font-weight: 600;">
+         ${idx + 1}. ${displayName}${p.ticker ? ' (' + p.ticker + ')' : ''}
+      </a>
+    </div>`;
+  })
+  .join('');
+
 
   const articlesHtml = articles.map(a => {
     const excerpt = escapeHtml(a.excerpt || '').replace(/\n/g,' ');
@@ -170,7 +181,7 @@ function buildEmailHtml(dateISO, picks, articles) {
       margin-bottom: 16px;
     }
     .logo {
-      width: 173px;
+      width: 208px;
       height: auto;
       display: block;
       margin-bottom: 12px;
@@ -326,11 +337,13 @@ function escapeHtml(s) {
         const quote = await fetchQuote(symbol);
         if (quote) {
           tickerMap[symbol] = {
-            symbol,
-            name: quote.shortName || quote.longName || r.shortname || orgName,
-            marketCap: quote.marketCap || null,
-            summary: quote.longBusinessSummary || '',
-          };
+  symbol,
+  name: quote.shortName || r.shortname || orgName,
+  fullName: quote.longName || quote.shortName || r.shortname || orgName,
+  marketCap: quote.marketCap || null,
+  summary: quote.longBusinessSummary || '',
+};
+
         }
       }
     }
@@ -360,13 +373,21 @@ function escapeHtml(s) {
   }
 
   if (picks.length < 5) {
-    for (const t of tickers) {
-      if (picks.length >= 5) break;
-      if (!picks.find(p => p.ticker === t.symbol)) {
-        picks.push({ name: t.name, ticker: t.symbol, marketCap: t.marketCap, reason: 'AI-related mention & market cap', link: `https://finance.yahoo.com/quote/${t.symbol}` });
-      }
+  for (const t of tickers) {
+    if (picks.length >= 5) break;
+    if (!picks.find(p => p.ticker === t.symbol) && !/(ETF|Fund|Trust|Index)/i.test(t.name)) {
+      picks.push({
+        name: t.name,
+        fullName: t.fullName,
+        ticker: t.symbol,
+        marketCap: t.marketCap,
+        reason: 'AI-related mention & market cap',
+        link: `https://finance.yahoo.com/quote/${t.symbol}`
+      });
     }
   }
+}
+
 
   if (picks.length < 5) {
     const allFallback = ['NVDA','MSFT','GOOGL','AMD','BOTZ','QQQ','ARKF','ROBO','XLK','IVW'];
