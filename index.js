@@ -173,7 +173,6 @@ function buildEmailHtml(dateISO, picks, articles) {
       background-color: #fff;
       padding: 20px;
       box-sizing: border-box;
-      text-align: left;
       }
     .header {
       display: block;
