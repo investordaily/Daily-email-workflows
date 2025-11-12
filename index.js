@@ -71,37 +71,17 @@ async function isLikelyPaywalled(url) {
 
 async function fetchArticleText(url) {
   try {
-    const r = await axios.get(url, {
-      timeout: 12000,
-      headers: { 'User-Agent': 'Mozilla/5.0' }
-    });
+    const r = await axios.get(url, { timeout: 12000, headers: { 'User-Agent': 'Mozilla/5.0' } });
     const $ = cheerio.load(r.data);
-
-    // Try to target article-like containers
-    let paragraphs = [];
-    const articleSelectors = [
-      'article p',
-      '.article-content p',
-      '.post-content p',
-      '.entry-content p',
-      '.story-body p',
-      '.main-content p'
-    ];
-    for (const sel of articleSelectors) {
-      const found = $(sel).map((i, el) => $(el).text().trim()).get();
-      if (found.length > 3) { // likely a real article
-        paragraphs = found;
-        break;
-      }
-    }
-
-    // Fallback: use all <p> tags if no article selector matched
-    if (paragraphs.length === 0) {
-      paragraphs = $('p').map((i, el) => $(el).text().trim()).get();
-    }
-
-    // Clean and join
-
+    let paragraphs = $('article p').map((i, el) => $(el).text()).get();
+    if (paragraphs.length === 0) paragraphs = $('p').map((i, el) => $(el).text()).get();
+    const text = paragraphs.join('\n\n').replace(/\s+/g, ' ').trim();
+    return text;
+  } catch (err) {
+    console.warn(`Failed fetchArticleText ${url}: ${err.message}`);
+    return '';
+  }
+}
 
 function firstNWords(text, n) {
   if (!text) return '';
@@ -308,12 +288,10 @@ function escapeHtml(s) {
     if (freeArticles.find(a => a.link === it.link)) continue;
     await new Promise(r => setTimeout(r, 400));
     const paywalled = await isLikelyPaywalled(it.link);
-    if (!paywalled) {const text = await fetchArticleText(it.link);
-const excerpt = firstNWords(text, 100);
-freeArticles.push({ title: it.title, link: it.link, pubDate: it.pubDate, source: it.source, text, excerpt });
-
-
-
+    if (!paywalled) {
+      const text = await fetchArticleText(it.link);
+      const excerpt = firstNWords(text, 100);
+      freeArticles.push({ title: it.title, link: it.link, pubDate: it.pubDate, source: it.source, text, excerpt });
       console.log('Added free article:', it.title);
     } else {
       console.log('Skipped (likely paywalled):', it.title);
