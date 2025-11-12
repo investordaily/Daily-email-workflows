@@ -308,9 +308,11 @@ function escapeHtml(s) {
     if (freeArticles.find(a => a.link === it.link)) continue;
     await new Promise(r => setTimeout(r, 400));
     const paywalled = await isLikelyPaywalled(it.link);
-    if (!paywalled) {
-      const excerpt = await fetchArticleText(it.link);
-freeArticles.push({ title: it.title, link: it.link, pubDate: it.pubDate, source: it.source, excerpt });
+    if (!paywalled) {const text = await fetchArticleText(it.link);
+const excerpt = firstNWords(text, 100);
+freeArticles.push({ title: it.title, link: it.link, pubDate: it.pubDate, source: it.source, text, excerpt });
+
+
 
       console.log('Added free article:', it.title);
     } else {
