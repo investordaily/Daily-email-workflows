@@ -147,7 +147,7 @@ function buildEmailHtml(dateISO, picks, articles) {
 
   const articlesHtml = articles.map(a => {
     const excerpt = escapeHtml(a.excerpt || '').replace(/\n/g,' ');
-    return `<li style="margin-bottom: 12px; line-height: 1.6;"><a href="${a.link}" style="color: ${brandColor}; text-decoration: none; font-weight: 600;">${escapeHtml(a.title)}</a> — <em style="color: #666;">${escapeHtml(a.source)}</em><div style="margin-top: 6px; color: #555; font-size: 13px;">${excerpt}</div></li>`;
+    return `<li style="margin-bottom: 12px; line-height: 1.6;text-align: left;"><a href="${a.link}" style="color: ${brandColor}; text-decoration: none; font-weight: 600;">${escapeHtml(a.title)}</a> — <em style="color: #666;">${escapeHtml(a.source)}</em><div style="margin-top: 6px; color: #555; font-size: 13px; text-align: left;">${excerpt}</div></li>`;
   }).join('\n');
 
   return `<!DOCTYPE html>
@@ -173,7 +173,8 @@ function buildEmailHtml(dateISO, picks, articles) {
       background-color: #fff;
       padding: 20px;
       box-sizing: border-box;
-    }
+      text-align: left;
+      }
     .header {
       display: block;
       padding-bottom: 16px;
@@ -208,6 +209,7 @@ function buildEmailHtml(dateISO, picks, articles) {
     .articles-list {
       margin: 12px 0;
       padding-left: 20px;
+      text-align: left;
     }
     .footer {
       font-size: 12px;
